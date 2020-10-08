@@ -119,7 +119,7 @@ This dataset contains `r nrow(accel)` rows and `r ncol(accel)` columns.
 Observations are the level of activities on a 63 year-old male with BMI 25 in 5 weeks. There are  `r nrow(accel)` observations in total. There are time variables -- week,day and whether it is weekday or weekend. There are also activity variables --number of activity and activity count.
 
 
-Total activity for each day
+Total activity of each day。
 ```{r}
   accel %>% 
   group_by(week, day) %>% 
@@ -133,6 +133,7 @@ Total activity for each day
 ```
 
 From the table of total_activity of each days in five weeks, we can find some patterns. For week 1 and week 2, the person is very active on weekends and not active on weekdays, especially Monday. Starting from week 3, the person has some changes in his life. He becomes more active on weekdays and less active on weekends. The range of total activities is also very big. For week 5, the person is very active on Friday but extremely inactive on Saturday. In addition, this person has a generally low activity level in week 4.
+
 
 
 Let's plot the activity in a day.
@@ -261,6 +262,6 @@ tmax_tmin_p / snowfall_dist_p
 ```
 
 
-From the hex plot, we can see most observations are around the center of the distribution. There are som variabilities. Maximum temperature and minimum temperature has a linear relationship. Higher minimun temperature corresponds to a higher maximum temperature. This makes sense. 
+From the hex plot, we can see most observations are around the center of the distribution.Most of them are within -30 to 30 for both max and min temperatures. There are some variabilities. Maximum temperature and minimum temperature has a linear relationship. Higher minimum temperature corresponds to a higher maximum temperature. This makes sense. There are some rare cases that are possible outliers. It is possible to suspect a problem with data entry error. 
 
 From the boxplots of the distribution of snowfall between 0 and 100, we can see that the distributions are similar across 1981 to 2010. They are all a right-skewed. In 1998, 2006 and 2010, there are several outliers in the snowfall distribution. Most snowfall is within a range of 20mm to 50mm for most years.In 2006, there is generally less snowfall but some extremely heavy snowfall.
