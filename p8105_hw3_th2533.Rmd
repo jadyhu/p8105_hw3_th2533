@@ -7,6 +7,7 @@ output: github_document
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(patchwork)
+library(hexbin)
 library(p8105.datasets)
 knitr::opts_chunk$set(
 	fig.width = 6, 
@@ -123,8 +124,11 @@ Total activity for each day
   accel %>% 
   group_by(week, day) %>% 
   summarise(total_activity = sum(activity_count)) %>% 
-  arrange(week,desc(total_activity)) %>% 
-  knitr::kable()
+  pivot_wider(
+    names_from = day,
+    values_from = total_activity
+  ) %>% 
+  knitr::kable(digits = 0)
 
 ```
 
@@ -186,6 +190,7 @@ Look at snowfall specifically.
 ny_noaa %>% 
   count(snow) %>% 
   arrange(desc(n)) %>% 
+  slice_head(n = 1) %>% 
   knitr::kable()
 ```
 
@@ -207,23 +212,34 @@ ny_noaa %>%
   labs(
     title = "Average Max Temperature plot",
     x = "Year from 1981 to 2010",
-    y = "Average Max Temperature",
+    y = "Average Max Temperature(C)",
     caption = "Data from the ny_noaa"
   ) 
 
 
 ```
 
+The average maximum temperatures in July from 1981 to 2010 don't change a lot and they are constant across the 30 years. More fluctuations are observed in the average maximum temperature in January from 1981 to 2010. The fluctuations are in a range of 5 degrees. There are 2 obvious outliers in January temperatures and a few more in July temperatures. From the maximum temperatures in July in these 30 years, we don't observe a general trend of global warming, ie. increasing temperatures. However, there is a trend of global warming between 1980 and 1990 in max temperature in January and the fluctuations in max temperatures may suggest that our climate is becoming more unpredictable and possibly an indication of global warming effect. 
 
 
 
-Let's make a two panel plot
+
+Let's make a two panel plot.
 ```{r}
 
 tmax_tmin_p = 
 ny_noaa %>% 
-  ggplot(aes(x = tmax, y = tmin)) + 
-  geom_hex() 
+  ggplot(aes(x = tmin, y = tmax)) + 
+  geom_hex() +
+  labs(
+    title = "Distributon of max and min temperature",
+    x = "Minimum temperature(C)",
+    y = "Maximum temperature(C)"
+  ) +
+  theme(legend.position = "right") +
+  scale_y_continuous(
+    breaks = c(-60,-30, 0, 30,60)
+  )
 
 snowfall_dist_p =
 ny_noaa %>% 
@@ -234,10 +250,17 @@ ny_noaa %>%
   labs(
     title = "Distributon of snowfall between 0 and 100 plot",
     x = "Year from 1981 to 2010",
-    y = "Snowfall",
-    caption = "Data from the ny_noaa"
-  ) 
+    y = "Snowfall(mm)"
+  ) +
+  theme(legend.position = "right") +
+  scale_x_discrete(
+    breaks = c(1981,1985,1990,1995,2000,2005,2010),
+  )
 
-tmax_tmin_p + snowfall_dist_p
+tmax_tmin_p / snowfall_dist_p
 ```
 
+
+From the hex plot, we can see most observations are around the center of the distribution. There are som variabilities. Maximum temperature and minimum temperature has a linear relationship. Higher minimun temperature corresponds to a higher maximum temperature. This makes sense. 
+
+From the boxplots of the distribution of snowfall between 0 and 100, we can see that the distributions are similar across 1981 to 2010. They are all a right-skewed. In 1998, 2006 and 2010, there are several outliers in the snowfall distribution. Most snowfall is within a range of 20mm to 50mm for most years.In 2006, there is generally less snowfall but some extremely heavy snowfall.
