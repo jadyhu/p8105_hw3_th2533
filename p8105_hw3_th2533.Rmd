@@ -1,0 +1,243 @@
+---
+author: Tianheng Hu
+title: "Homework 3"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(patchwork)
+library(p8105.datasets)
+knitr::opts_chunk$set(
+	fig.width = 6, 
+  fig.asp = .6,
+  out.width = "90%"
+)
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+
+
+# Problem 1
+
+```{r}
+data("instacart")
+```
+
+This dataset contains `r nrow(instacart)` rows and `r ncol(instacart)` columns.
+
+Observations are the level of items in orders by user. There are user/order variables -- user ID, order ID, order day, and order hour. There are also item variables -- name, aisle, department, and some numeric codes.
+
+
+How many aisles, and which are most items from?
+
+```{r}
+instacart %>% 
+  count(aisle) %>% 
+  arrange(desc(n))
+
+```
+
+Let's make a plot.
+
+```{r}
+instacart %>% 
+  count(aisle) %>% 
+  filter(n > 10000) %>% 
+  mutate(
+    aisle = factor(aisle),
+    aisle = fct_reorder(aisle, n)
+  ) %>% 
+  ggplot(aes(x = aisle, y = n)) +
+  geom_point() +
+  theme(axis.text.x=element_text(angle = 90, vjust = 0.5, hjust = 1))
+  
+```
+
+Let's make a table
+```{r}
+instacart %>% 
+  filter(aisle %in% c ("baking ingredients", "dog food care", "packaged vegetables fruits")) %>% 
+  group_by(aisle) %>% 
+  count(product_name) %>% 
+  mutate(rank = min_rank(desc(n))) %>% 
+  filter(rank < 4) %>% 
+  arrange(aisle, rank) %>% 
+  knitr::kable()
+
+```
+
+Apples vs Ice cream
+
+```{r}
+instacart %>% 
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>% 
+  group_by(product_name, order_dow) %>% 
+  summarise(mean_hour = mean(order_hour_of_day)) %>% 
+  pivot_wider(
+    names_from = order_dow,
+    values_from = mean_hour
+  )
+```
+
+
+# Problem 2
+
+
+Load, tidy and wrangle the dataset
+```{r}
+accel = 
+  read_csv(
+  "./data/accel_data.csv") %>% 
+  janitor::clean_names() %>% 
+  select(-day_id) %>% 
+  pivot_longer(
+    activity_1:activity_1440,
+    names_to = "minute",
+    names_prefix = "activity_",
+    values_to = "activity_count"
+  ) %>% 
+  mutate(
+    weekday = ifelse(day %in% c("Saturday","Sunday"), FALSE, TRUE),
+    minute = as.numeric(minute),
+    day = factor(day, levels= c("Monday", "Tuesday", "Wednesday", "Thursday", 
+                      "Friday", "Saturday", "Sunday"))
+  ) %>% 
+  arrange(day)
+
+```
+
+This dataset contains `r nrow(accel)` rows and `r ncol(accel)` columns.
+
+Observations are the level of activities on a 63 year-old male with BMI 25 in 5 weeks. There are  `r nrow(accel)` observations in total. There are time variables -- week,day and whether it is weekday or weekend. There are also activity variables --number of activity and activity count.
+
+
+Total activity for each day
+```{r}
+  accel %>% 
+  group_by(week, day) %>% 
+  summarise(total_activity = sum(activity_count)) %>% 
+  arrange(week,desc(total_activity)) %>% 
+  knitr::kable()
+
+```
+
+From the table of total_activity of each days in five weeks, we can find some patterns. For week 1 and week 2, the person is very active on weekends and not active on weekdays, especially Monday. Starting from week 3, the person has some changes in his life. He becomes more active on weekdays and less active on weekends. The range of total activities is also very big. For week 5, the person is very active on Friday but extremely inactive on Saturday. In addition, this person has a generally low activity level in week 4.
+
+
+Let's plot the activity in a day.
+```{r}
+
+accel %>% 
+  ggplot(aes(x = minute, y = activity_count, color = day)) +
+  geom_line(alpha = 0.5) +
+  labs(
+    title = "Activity plot",
+    x = "Minutes in a day",
+    y = "Activity count",
+    caption = "Data from the accelerometer"
+  ) 
+
+
+```
+
+From the plot of activity count over the course of the day, we can see that this person tends to workout in the evening of a day from the cluster of high activity level from 1000 mins to 1300 mins. On weekends, typically Sunday, he likes to workout in the middle of the day. On Saturdays, his activities are distributed throughout the day. Combining with the information from the table, this person don't have a stable activity level everyday in a week. He usually has workout days when he normally has higher activity level and has rest days when he normally has lower activity level. The workout days and rest days change throught different weeks. 
+
+
+
+# Problem 3
+
+
+```{r}
+data("ny_noaa")
+```
+
+This dataset contains `r nrow(ny_noaa)` rows and `r ncol(ny_noaa)` columns. This documents the weather data from Global Historical Climatology Network.
+
+Observations are the weather conditions from all New York State weather stations from January 1, 1981 through December 31, 2010 There are  `r nrow(ny_noaa)` observations in total. There are station/date variables -- weather station id and date of observation. There are also weather condition variables --precipitation, snowfall, snow depth, Maximum and minimum temperature. In the dataset, there are total of `mean(is.na(ny_noaa))*100`% missing values. Maximum and minimum temperature have the most missing values about `mean(is.na(ny_noaa$tmax))*100`%. So missing values are a big problem when working with this dataset.
+
+
+Tidy the dataset
+```{r}
+ny_noaa = 
+  ny_noaa %>% 
+  separate(date, c("year", "month", "day")) %>% 
+  mutate(
+    month = as.integer(month),
+    year = as.integer(year),
+    month = month.name[month],
+    tmax = as.numeric(tmax),
+    tmax = tmax/10,
+    tmin = as.numeric(tmin),
+    tmin = tmin/10,
+    prcp = prcp/10) 
+
+```
+
+
+Look at snowfall specifically.
+```{r}
+ny_noaa %>% 
+  count(snow) %>% 
+  arrange(desc(n)) %>% 
+  knitr::kable()
+```
+
+Zero snowfall is the most commonly observed value. This makes sense because it is winter for only a few months with snow in New York. Most time there is no snow in NY.
+
+
+
+Let's make a two panel plot showing the average max temperature in January and in July in each station across years.
+
+```{r}
+ny_noaa %>% 
+  filter(month %in% c("January", "July")) %>% 
+  group_by(year, id, month) %>%
+  summarise(avg_max = mean(tmax)) %>% 
+  ggplot(aes(x = year, y = avg_max, color = month)) +
+  geom_point() +
+  geom_smooth(se = FALSE) + 
+  facet_grid(. ~ month) +
+  labs(
+    title = "Average Max Temperature plot",
+    x = "Year from 1981 to 2010",
+    y = "Average Max Temperature",
+    caption = "Data from the ny_noaa"
+  ) 
+
+
+```
+
+
+
+
+Let's make a two panel plot
+```{r}
+
+tmax_tmin_p = 
+ny_noaa %>% 
+  ggplot(aes(x = tmax, y = tmin)) + 
+  geom_hex() 
+
+snowfall_dist_p =
+ny_noaa %>% 
+  filter(snow > 0 & snow < 100) %>% 
+  mutate(year = factor(year)) %>% 
+  ggplot(aes(x = year, y = snow)) + 
+  geom_boxplot() +
+  labs(
+    title = "Distributon of snowfall between 0 and 100 plot",
+    x = "Year from 1981 to 2010",
+    y = "Snowfall",
+    caption = "Data from the ny_noaa"
+  ) 
+
+tmax_tmin_p + snowfall_dist_p
+```
+
