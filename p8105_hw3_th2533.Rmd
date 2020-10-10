@@ -121,7 +121,7 @@ Observations are the level of activities on a 63 year-old male with BMI 25 in 5 
 
 Total activity of each day。
 ```{r}
-  accel %>% 
+accel %>% 
   group_by(week, day) %>% 
   summarise(total_activity = sum(activity_count)) %>% 
   pivot_wider(
